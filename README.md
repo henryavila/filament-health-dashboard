@@ -37,7 +37,9 @@ $panel->plugin(FilamentHealthDashboardPlugin::make());
 
 - **Status grid** of every registered health check (color + icon + message).
 - **Per-check `meta` drill-down** — the generic spatie `Result->meta` that most
-  dashboards throw away.
+  dashboards throw away, rendered in the most readable shape automatically
+  (scalar → inline, nested → pretty JSON, **list of records → a table**). See
+  [Metadata rendering](#metadata-rendering).
 - **Failing-count navigation badge** on the dashboard menu item.
 - **Three surfaces**: standalone page, widget, or embeddable Livewire component.
 - **Integration layer** (`CheckIntegration`): per-check rich infolist + actions.
@@ -62,6 +64,12 @@ You also need `spatie/laravel-health` configured: register your checks (e.g. in 
 service provider via `Health::checks([...])`) and a result store such as
 `EloquentHealthResultStore`. Schedule `php artisan health:check` so the store
 stays fresh.
+
+> **Styling is self-contained.** The dashboard inlines its own stylesheet, so
+> there is **no `php artisan filament:assets` step** — it renders correctly the
+> moment the plugin is registered (including path-symlinked dev installs). Fonts
+> resolve to Filament's bundled Inter and a system monospace fallback; no
+> external font CDN is fetched.
 
 ## Quick start
 
@@ -136,6 +144,36 @@ All methods are chained on `FilamentHealthDashboardPlugin::make()`:
 | `registerPage(bool = true)` | Register the standalone page + nav item. |
 | `usingPage(class-string)` | Use a custom page class. |
 | `integrations(array)` | Register per-check integrations (see below). |
+
+## Metadata rendering
+
+Every check's `Result->meta` is rendered automatically in the drill-down — no
+per-app code — picking the most readable shape per value:
+
+| Meta value shape | Rendered as |
+|---|---|
+| Scalar (`string`/`int`/`bool`/`null`) | inline value |
+| **List of records** (`[{...}, {...}]` — list of associative arrays) | **a table** (columns = union of keys, one row per record) |
+| Any other nested array/object | pretty-printed, scrollable JSON block |
+
+The table case is the high-value one: checks that store a list of rows as meta
+(e.g. `spatie/security-advisories-health-check` stores one advisory object per
+row) would otherwise read as a single 2 KB JSON line. The detection
+([`MetaTable::tryFrom()`](src/Support/MetaTable.php)) is fully generic, so any
+check in any app gets the table for free — just put a list of records in `meta`:
+
+```php
+Result::make()->meta([
+    'advisories' => [
+        ['package' => 'acme/foo', 'cve' => 'CVE-2026-1', 'severity' => 'high'],
+        ['package' => 'acme/bar', 'cve' => 'CVE-2026-2', 'severity' => 'medium'],
+    ],
+]);
+// → renders a 3-column table (package · cve · severity), 2 rows.
+```
+
+Need something richer than meta (status-coloured rows, remediation buttons,
+a bespoke layout)? Use the integration layer below.
 
 ## Integration layer
 

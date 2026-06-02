@@ -60,6 +60,12 @@
     @if ($poll) wire:poll.{{ $poll }} @endif
     style="display: flex; flex-direction: column; gap: 24px">
 
+    {{-- Self-contained styling: inlined so the dashboard renders correctly with
+         no `php artisan filament:assets` publish step. A <style> nested in the
+         single Livewire root keeps the component self-rooted while the rules
+         apply globally (tokens + .h-* classes used throughout this view). --}}
+    <style>{!! $this->inlineStyles() !!}</style>
+
     {{-- Header --}}
     <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap">
         <div>
@@ -118,27 +124,23 @@
             @endforeach
         </div>
 
-        {{-- Checks grid (treatment A) --}}
+        {{-- Checks grid (treatment B — "Compacto") --}}
         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 16px; align-items: stretch">
             @foreach ($checks as $i => $check)
                 @php $s = $St::of($check['status']); @endphp
                 <div class="h-card h-card--int" tabindex="0" role="button" wire:key="hc-{{ $check['name'] }}"
                     @click="selected = {{ $i }}" @keydown.enter="selected = {{ $i }}" @keydown.space.prevent="selected = {{ $i }}"
-                    style="position: relative; overflow: hidden; display: flex; flex-direction: column">
-                    <span class="h-accent" style="--accent: {{ $s['color'] }}"></span>
-                    <div style="padding: var(--hd-card-pad); padding-left: calc(var(--hd-card-pad) + 4px); display: flex; flex-direction: column; gap: 12px; flex: 1">
-                        <div style="display: flex; align-items: flex-start; gap: 13px">
-                            <span class="h-chip" style="width: 42px; height: 42px; background: {{ $s['bg'] }}; color: {{ $s['color'] }}">{!! $Icon::outline($check['icon'], 22, 1.8) !!}</span>
-                            <div style="flex: 1; min-width: 0">
-                                <div style="font-family: var(--font-sans); font-weight: 700; font-size: 16px; color: var(--fg-1); letter-spacing: -0.01em">{{ $check['label'] }}</div>
-                                <div style="margin-top: 3px; display: inline-flex; align-items: center; gap: 5px; color: var(--fg-3); font-size: 12px; font-weight: 500; font-family: var(--font-sans)">{!! $Icon::outline('clock', 13, 1.8) !!} Verificado {{ $check['lastRan'] }}</div>
-                            </div>
-                            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 11px 4px 8px; border-radius: var(--r-full); background: {{ $s['bg'] }}; color: {{ $s['color'] }}; font-family: var(--font-sans); font-weight: 700; font-size: 12px; line-height: 1; white-space: nowrap">{!! $Icon::solid($s['icon'], 15) !!}{{ $s['label'] }}</span>
+                    style="display: flex; flex-direction: column; overflow: hidden">
+                    <div style="padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 8px; flex: 1">
+                        <div style="display: flex; align-items: center; gap: 10px">
+                            <span class="h-chip" style="width: 30px; height: 30px; background: {{ $s['bg'] }}; color: {{ $s['color'] }}; flex: none">{!! $Icon::solid($s['icon'], 17) !!}</span>
+                            <span style="flex: 1; min-width: 0; font-family: var(--font-sans); font-weight: 700; font-size: 14.5px; color: var(--fg-1); letter-spacing: -0.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ $check['label'] }}</span>
+                            <span style="display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 7px; border-radius: var(--r-full); background: {{ $s['bg'] }}; color: {{ $s['color'] }}; font-family: var(--font-sans); font-weight: 700; font-size: 11.5px; line-height: 1; white-space: nowrap">{!! $Icon::solid($s['icon'], 14) !!}{{ $s['label'] }}</span>
                         </div>
-                        <p style="margin: 0; font-family: var(--font-sans); font-size: 14px; line-height: 1.5; color: var(--fg-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 42px">{{ $check['summary'] }}</p>
+                        <p style="margin: 0; font-family: var(--font-sans); font-size: 13px; line-height: 1.45; color: var(--fg-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden">{{ $check['summary'] }}</p>
                     </div>
-                    <div style="border-top: 1px solid var(--border); padding: 11px 16px 11px calc(var(--hd-card-pad) + 4px); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; row-gap: 8px">
-                        <span style="display: inline-flex; align-items: center; gap: 4px; font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--fg-2)">Detalhes {!! $Icon::outline('chevronR', 14, 2.2) !!}</span>
+                    <div style="border-top: 1px solid var(--border); padding: 9px 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; row-gap: 8px">
+                        <span style="display: inline-flex; align-items: center; gap: 6px; color: var(--fg-3); font-size: 11.5px; font-weight: 500; font-family: var(--font-sans)">{!! $Icon::outline($check['icon'], 14, 1.7) !!} {{ $check['lastRan'] }}</span>
                         <span style="display: inline-flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px" @click.stop>
                             @foreach ($check['actions'] as $a)
                                 @include('filament-health-dashboard::widgets._action', ['a' => $a, 'check' => $check, 'Icon' => $Icon, 'color' => $s['color'], 'size' => 'xs'])
@@ -193,7 +195,7 @@
                 @foreach ($checks as $i => $check)
                     @php $s = $St::of($check['status']); @endphp
                     <div x-show="selected === {{ $i }}" class="h-modal" role="dialog" aria-modal="true" @click.stop
-                        style="width: min(720px, 100%); max-height: 88vh; display: flex; flex-direction: column; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-xl); box-shadow: var(--shadow-xl); overflow: hidden">
+                        style="width: min({{ $check['modalWidth'] }}px, 95vw); max-height: 88vh; display: flex; flex-direction: column; background: var(--bg-surface); border: 1px solid var(--border); border-radius: var(--r-xl); box-shadow: var(--shadow-xl); overflow: hidden">
                         {{-- header --}}
                         <div style="display: flex; align-items: flex-start; gap: 14px; padding: 20px 22px; border-bottom: 1px solid var(--border)">
                             <span class="h-chip" style="width: 46px; height: 46px; background: {{ $s['bg'] }}; color: {{ $s['color'] }}; flex: none">{!! $Icon::outline($check['icon'], 24, 1.8) !!}</span>
@@ -219,10 +221,49 @@
                                 <div>
                                     <div class="arch-overline" style="margin-bottom: 9px">Metadados</div>
                                     <div style="border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden">
-                                        @foreach ($check['meta'] as $k => $v)
-                                            <div style="display: grid; grid-template-columns: 200px 1fr; gap: 12px; padding: 10px 14px; {{ ! $loop->last ? 'border-bottom: 1px solid var(--border);' : '' }} {{ $loop->index % 2 ? 'background: var(--bg-subtle);' : '' }}">
-                                                <span style="font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--fg-2)">{{ $k }}</span>
-                                                <span class="tnum" style="font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-1); overflow-wrap: anywhere">{{ $v }}</span>
+                                        @foreach ($check['meta'] as $entry)
+                                            <div style="padding: 10px 14px; {{ ! $loop->last ? 'border-bottom: 1px solid var(--border);' : '' }}">
+                                                @if ($entry['kind'] === 'table')
+                                                    {{-- List of records → auto table. Generic: any check whose meta is
+                                                         a list of objects (e.g. SecurityAdvisories) maps to columns/rows
+                                                         with zero per-app code. --}}
+                                                    <div style="font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--fg-2); margin-bottom: 8px">
+                                                        {{ $entry['label'] }}
+                                                        <span style="color: var(--fg-3); font-weight: 500">· {{ count($entry['table']->rows) }} {{ count($entry['table']->rows) === 1 ? 'item' : 'itens' }}</span>
+                                                    </div>
+                                                    <div class="h-scroll" style="border: 1px solid var(--border); border-radius: var(--r-md); overflow: auto">
+                                                        <table style="width: 100%; border-collapse: collapse; font-family: var(--font-sans); font-size: 12.5px">
+                                                            <thead>
+                                                                <tr style="background: var(--bg-subtle)">
+                                                                    @foreach ($entry['table']->columns as $col)
+                                                                        <th style="text-align: left; padding: 8px 12px; font-weight: 700; font-size: 10.5px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-3); border-bottom: 1px solid var(--border); white-space: nowrap">{{ $col }}</th>
+                                                                    @endforeach
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @foreach ($entry['table']->rows as $row)
+                                                                    <tr class="h-row-hover" style="{{ ! $loop->last ? 'border-bottom: 1px solid var(--border);' : '' }}">
+                                                                        @foreach ($row as $cell)
+                                                                            <td style="padding: 8px 12px; color: var(--fg-1); font-family: var(--font-mono); font-size: 11.5px; vertical-align: top; overflow-wrap: anywhere; max-width: 360px">{{ $cell }}</td>
+                                                                        @endforeach
+                                                                    </tr>
+                                                                @endforeach
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                @elseif ($entry['kind'] === 'json')
+                                                    <div style="display: grid; grid-template-columns: 200px 1fr; gap: 12px; align-items: start">
+                                                        <span style="font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--fg-2)">{{ $entry['label'] }}</span>
+                                                        {{-- Pretty-printed JSON: preserve indentation + line breaks in a
+                                                             scrollable mono block so it is readable, not one collapsed line. --}}
+                                                        <pre class="h-scroll" style="margin: 0; font-family: var(--font-mono); font-size: 12px; line-height: 1.5; color: var(--fg-1); white-space: pre-wrap; word-break: break-word; max-height: 320px; overflow: auto">{{ $entry['text'] }}</pre>
+                                                    </div>
+                                                @else
+                                                    <div style="display: grid; grid-template-columns: 200px 1fr; gap: 12px; align-items: start">
+                                                        <span style="font-family: var(--font-sans); font-size: 13px; font-weight: 600; color: var(--fg-2)">{{ $entry['label'] }}</span>
+                                                        <span class="tnum" style="font-family: var(--font-mono); font-size: 12.5px; color: var(--fg-1); overflow-wrap: anywhere">{{ $entry['text'] }}</span>
+                                                    </div>
+                                                @endif
                                             </div>
                                         @endforeach
                                     </div>

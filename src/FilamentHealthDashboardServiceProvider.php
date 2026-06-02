@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace HenryAvila\FilamentHealthDashboard;
 
-use Filament\Support\Assets\Css;
-use Filament\Support\Facades\FilamentAsset;
 use HenryAvila\FilamentHealthDashboard\Widgets\HealthDashboardWidget;
 use Livewire\Livewire;
 use Spatie\LaravelPackageTools\Package;
@@ -22,9 +20,11 @@ class FilamentHealthDashboardServiceProvider extends PackageServiceProvider
 
     public function packageBooted(): void
     {
-        FilamentAsset::register([
-            Css::make('filament-health-dashboard', __DIR__ . '/../resources/css/health-dashboard.css'),
-        ], package: 'henryavila/filament-health-dashboard');
+        // The dashboard stylesheet is inlined by the widget itself
+        // (HealthDashboardWidget::inlineStyles), so there is intentionally no
+        // FilamentAsset::register() here: the UI is self-contained and needs no
+        // `php artisan filament:assets` publish step (which, when skipped, left
+        // the registered <link> pointing at a 404 and the page unstyled).
 
         // Alias so the dashboard can be embedded in any Blade:
         //   <livewire:filament-health-dashboard />

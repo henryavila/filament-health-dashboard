@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace HenryAvila\FilamentHealthDashboard\Widgets;
 
+use Filament\Notifications\Notification;
 use Filament\Widgets\Widget;
 use HenryAvila\FilamentHealthDashboard\Contracts\CheckIntegration;
 use HenryAvila\FilamentHealthDashboard\FilamentHealthDashboardPlugin;
 use HenryAvila\FilamentHealthDashboard\Support\HealthHistory;
 use HenryAvila\FilamentHealthDashboard\Support\HealthIcons;
 use HenryAvila\FilamentHealthDashboard\Support\HealthStatus;
+use HenryAvila\FilamentHealthDashboard\Support\MetaTable;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Date;
 use Spatie\Health\ResultStores\ResultStore;
 use Spatie\Health\ResultStores\StoredCheckResults\StoredCheckResult;
@@ -28,12 +31,72 @@ class HealthDashboardWidget extends Widget
 
     protected int|string|array $columnSpan = 'full';
 
+    /** Drill-down modal sizing — width scales with a check's widest table. */
+    private const int MODAL_WIDTH_DEFAULT = 720;
+
+    private const int MODAL_WIDTH_MAX = 1680;
+
+    private const int MODAL_PER_COLUMN_PX = 160;
+
+    private const int MODAL_CHROME_PX = 96;
+
+    /**
+     * The dashboard stylesheet, inlined into the widget output so the UI is
+     * self-contained: it renders pixel-correct wherever it is mounted (page,
+     * widget slot, or `<livewire:filament-health-dashboard />`) without the
+     * host having to run `php artisan filament:assets`. Read once per request.
+     */
+    public function inlineStyles(): string
+    {
+        static $css = null;
+
+        return $css ??= (string) file_get_contents(__DIR__ . '/../../resources/css/health-dashboard.css');
+    }
+
     // ---- actions ----------------------------------------------------
+
+    private const string RUN_LOCK_KEY = 'filament-health-dashboard:run-checks';
 
     /** Re-run all health checks (header button). */
     public function runChecks(): void
     {
-        Artisan::call('health:check');
+        // This Livewire method is publicly callable, so re-check the same gate
+        // the page uses instead of trusting the UI.
+        if (! ($this->plugin()?->isAuthorized() ?? false)) {
+            return;
+        }
+
+        // Debounce concurrent runs (spam-clicks / parallel tabs) so a fresh
+        // click never piles a second `health:check` on top of one in flight.
+        $lock = Cache::lock(self::RUN_LOCK_KEY, 60);
+
+        if (! $lock->get()) {
+            Notification::make()->title('Uma verificação já está em andamento.')->warning()->send();
+
+            return;
+        }
+
+        try {
+            // Artisan::call() is typed `: int` (the command exit code) — a
+            // non-zero code is a failure, so the run no longer reads as success
+            // in the UI regardless of outcome.
+            $exitCode = Artisan::call('health:check');
+
+            $this->notifyOutcome(
+                $exitCode === 0,
+                'Verificações executadas.',
+                'Falha ao executar as verificações.',
+            );
+        } catch (Throwable $e) {
+            report($e);
+            Notification::make()
+                ->title('Falha ao executar as verificações.')
+                ->body($e->getMessage())
+                ->danger()
+                ->send();
+        } finally {
+            $lock->release();
+        }
     }
 
     /** Run a single integration action for a check. */
@@ -48,11 +111,36 @@ class HealthDashboardWidget extends Widget
 
         foreach ($integration->actions($result) as $action) {
             if ($action->key === $key && $action->authorized) {
-                $action->run();
+                $failureTitle = sprintf('%s — falhou.', $action->label);
+
+                // The handler is an opaque side-effecting closure, so a thrown
+                // exception is the failure signal — caught here so a failing
+                // action surfaces an error instead of silently reading as done.
+                try {
+                    $action->run();
+                } catch (Throwable $e) {
+                    report($e);
+                    Notification::make()->title($failureTitle)->body($e->getMessage())->danger()->send();
+
+                    return;
+                }
+
+                Notification::make()->title(sprintf('%s — concluído.', $action->label))->success()->send();
 
                 return;
             }
         }
+    }
+
+    private function notifyOutcome(bool $ok, string $successTitle, string $failureTitle): void
+    {
+        if ($ok) {
+            Notification::make()->title($successTitle)->success()->send();
+
+            return;
+        }
+
+        Notification::make()->title($failureTitle)->danger()->send();
     }
 
     // ---- view model -------------------------------------------------
@@ -177,6 +265,7 @@ class HealthDashboardWidget extends Widget
 
         $actions = [];
         $dataTable = null;
+        $dataTableColumns = 0;
 
         if ($integration !== null) {
             foreach ($integration->actions($r) as $action) {
@@ -185,8 +274,12 @@ class HealthDashboardWidget extends Widget
                 }
             }
 
-            $dataTable = $integration->dataTable($r)?->toArray();
+            $table = $integration->dataTable($r);
+            $dataTable = $table?->toArray();
+            $dataTableColumns = $table === null ? 0 : count($table->columns);
         }
+
+        $meta = $this->presentMeta($r->meta);
 
         return [
             'name' => $r->name,
@@ -197,31 +290,88 @@ class HealthDashboardWidget extends Widget
             'summary' => $r->shortSummary !== '' ? $r->shortSummary : (string) $r->notificationMessage,
             'message' => $r->notificationMessage !== '' ? (string) $r->notificationMessage : $r->shortSummary,
             'lastRan' => $this->lastRanLabel() ?? '—',
-            'meta' => $this->formatMeta($r->meta),
+            'meta' => $meta,
             'history' => $history ?? array_fill(0, HealthHistory::DAYS, null),
             'actions' => $actions,
             'dataTable' => $dataTable,
+            // Drill-down width is derived from the widest table the check carries
+            // (see modalWidthFor) so many-column content gets room. The view caps
+            // it to the viewport.
+            'modalWidth' => $this->modalWidthFor($meta, $dataTableColumns),
         ];
     }
 
     /**
-     * @param  array<string, mixed>  $meta
-     * @return array<string, string>
+     * Drill-down modal width (px), scaled to the widest table the check carries.
+     * A check with no table keeps the comfortable default; otherwise the width
+     * grows with the column count so dense tables (e.g. SecurityAdvisories'
+     * ~12-column advisory list) get space instead of being crammed. Generic —
+     * driven purely by structure (column count), not by any specific check. The
+     * view caps the result to the viewport (`min(..px, 95vw)`) and the table
+     * still scrolls horizontally if even that is not enough.
+     *
+     * @param  list<array{label: string, kind: string, text: string|null, table: MetaTable|null}>  $meta
      */
-    private function formatMeta(array $meta): array
+    private function modalWidthFor(array $meta, int $dataTableColumns): int
     {
-        $out = [];
+        $maxColumns = $dataTableColumns;
+
+        foreach ($meta as $entry) {
+            if ($entry['table'] !== null) {
+                $maxColumns = max($maxColumns, count($entry['table']->columns));
+            }
+        }
+
+        if ($maxColumns === 0) {
+            return self::MODAL_WIDTH_DEFAULT;
+        }
+
+        // ~160px per column + chrome, clamped to a sane band.
+        $estimate = self::MODAL_CHROME_PX + $maxColumns * self::MODAL_PER_COLUMN_PX;
+
+        return max(self::MODAL_WIDTH_DEFAULT, min(self::MODAL_WIDTH_MAX, $estimate));
+    }
+
+    /**
+     * Present check metadata for the modal, picking the most readable shape per
+     * value — fully generic, so any check benefits with zero per-app code:
+     *   • list of records  → a table ({@see MetaTable})
+     *   • nested array/obj → pretty-printed JSON (view renders it in a <pre>)
+     *   • scalar           → inline value
+     *
+     * @param  array<string, mixed>  $meta
+     * @return list<array{label: string, kind: 'scalar'|'json'|'table', text: string|null, table: MetaTable|null}>
+     */
+    private function presentMeta(array $meta): array
+    {
+        $entries = [];
 
         foreach ($meta as $key => $value) {
-            $out[(string) $key] = match (gettype($value)) {
-                'array', 'object' => (string) json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
-                'boolean' => $value ? 'true' : 'false',
-                'NULL' => '—',
-                default => (string) $value,
+            $label = (string) $key;
+            $table = MetaTable::tryFrom($value);
+
+            if ($table !== null) {
+                $entries[] = ['label' => $label, 'kind' => 'table', 'text' => null, 'table' => $table];
+
+                continue;
+            }
+
+            $entries[] = match (gettype($value)) {
+                // Nested structure that is NOT a clean list of records: pretty-
+                // print so the indented JSON is readable instead of one line.
+                'array', 'object' => [
+                    'label' => $label,
+                    'kind' => 'json',
+                    'text' => (string) json_encode($value, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                    'table' => null,
+                ],
+                'boolean' => ['label' => $label, 'kind' => 'scalar', 'text' => $value ? 'true' : 'false', 'table' => null],
+                'NULL' => ['label' => $label, 'kind' => 'scalar', 'text' => '—', 'table' => null],
+                default => ['label' => $label, 'kind' => 'scalar', 'text' => (string) $value, 'table' => null],
             };
         }
 
-        return $out;
+        return $entries;
     }
 
     /**

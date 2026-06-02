@@ -3,8 +3,14 @@
    Token fallbacks use :where(:root) (zero specificity) so a host design system
    that defines :root tokens always wins — drop-in pixel match when present,
    sensible neutral defaults when not. No brand-specific tokens here.
+
+   This sheet is injected inline by the widget (see HealthDashboardWidget::
+   inlineStyles), so the dashboard is self-contained and needs no
+   `php artisan filament:assets` publish step. Fonts therefore resolve to the
+   host's bundled Inter (Filament ships it) and a system monospace fallback —
+   we deliberately avoid an external @import so an offline/locked-down infra
+   panel never blocks on a CDN.
    ========================================================================= */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :where(:root) {
   --gray-0: #FFFFFF;  --gray-25: #FBFCFD; --gray-50: #F5F7FA; --gray-100: #EDF1F6;
