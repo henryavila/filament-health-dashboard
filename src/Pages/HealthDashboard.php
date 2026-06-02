@@ -9,10 +9,12 @@ use Filament\Actions\Action;
 use Filament\Pages\Page;
 use HenryAvila\FilamentHealthDashboard\Contracts\CheckIntegration;
 use HenryAvila\FilamentHealthDashboard\FilamentHealthDashboardPlugin;
+use Illuminate\Contracts\Support\Htmlable;
 use Illuminate\Support\Facades\Artisan;
 use Spatie\Health\ResultStores\ResultStore;
 use Spatie\Health\ResultStores\StoredCheckResults\StoredCheckResult;
 use Spatie\Health\ResultStores\StoredCheckResults\StoredCheckResults;
+use UnitEnum;
 
 /**
  * Actionable health dashboard. Renders the latest spatie/laravel-health results
@@ -23,12 +25,12 @@ class HealthDashboard extends Page
 {
     protected string $view = 'filament-health-dashboard::pages.health-dashboard';
 
-    public static function getNavigationGroup(): ?string
+    public static function getNavigationGroup(): string|UnitEnum|null
     {
         return FilamentHealthDashboardPlugin::get()->getNavigationGroup();
     }
 
-    public static function getNavigationIcon(): string|BackedEnum|null
+    public static function getNavigationIcon(): string|BackedEnum|Htmlable|null
     {
         return FilamentHealthDashboardPlugin::get()->getNavigationIcon();
     }
@@ -43,7 +45,7 @@ class HealthDashboard extends Page
         return FilamentHealthDashboardPlugin::get()->getNavigationLabel() ?? 'Health';
     }
 
-    public function getTitle(): string
+    public function getTitle(): string|Htmlable
     {
         return static::getNavigationLabel();
     }
@@ -59,7 +61,7 @@ class HealthDashboard extends Page
         return $failing > 0 ? (string) $failing : null;
     }
 
-    public static function getNavigationBadgeColor(): ?string
+    public static function getNavigationBadgeColor(): string|array|null
     {
         return 'danger';
     }
