@@ -33,6 +33,9 @@
             "HenryAvila\\FilamentHealthDashboard\\Tests\\": "tests/"
         }
     },
+    "scripts": {
+        "test": "vendor/bin/pest"
+    },
     "extra": {
         "laravel": {
             "providers": [

@@ -1,29 +1,56 @@
 # Filament Health Dashboard
 
+[![Latest tag](https://img.shields.io/github/v/tag/henryavila/filament-health-dashboard?label=release&sort=semver)](https://github.com/henryavila/filament-health-dashboard/tags)
+[![Filament v4](https://img.shields.io/badge/Filament-v4-f59e0b)](https://filamentphp.com)
+[![License: MIT](https://img.shields.io/github/license/henryavila/filament-health-dashboard)](LICENSE)
+
 An **actionable** [Filament v4](https://filamentphp.com) dashboard for
 [`spatie/laravel-health`](https://github.com/spatie/laravel-health).
 
-Unlike a read-only status mirror, this package surfaces each check's `meta`
-(drill-down), a failing-count navigation badge, and a host-pluggable
-**integration layer** so domain checks can offer rich detail + remediation
-actions — without coupling the package to your app.
+Most health dashboards are a read-only mirror of the status page. This one goes
+further: it surfaces each check's `meta` (drill-down), shows a failing-count
+navigation badge, can live as a page **or** a widget **or** an embeddable
+component, and exposes an **integration layer** so your domain checks can offer
+rich detail and one-click remediation — without coupling the package to your app.
+
+```php
+// Minimal: a status dashboard on your panel
+$panel->plugin(FilamentHealthDashboardPlugin::make());
+```
+
+---
+
+## Table of contents
+
+- [Features](#features)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Where the dashboard appears (3 surfaces)](#where-the-dashboard-appears)
+- [Configuration](#configuration)
+- [Integration layer](#integration-layer)
+- [Customizing the view](#customizing-the-view)
+- [Testing](#testing)
+- [License](#license)
 
 ## Features
 
 - **Status grid** of every registered health check (color + icon + message).
-- **Per-check `meta` drill-down** (the generic spatie `Result->meta`, which most
-  dashboards discard).
+- **Per-check `meta` drill-down** — the generic spatie `Result->meta` that most
+  dashboards throw away.
 - **Failing-count navigation badge** on the dashboard menu item.
-- **Optional polling** (auto-refresh) and a manual "re-run checks" action.
-- **Authorization** hook.
-- **Integration layer** (`CheckIntegration`): register, per check, a rich
-  infolist drill-down and remediation actions.
+- **Three surfaces**: standalone page, widget, or embeddable Livewire component.
+- **Integration layer** (`CheckIntegration`): per-check rich infolist + actions.
+- **Optional polling** (auto-refresh) and a manual "re-run checks" button.
+- **Authorization** hook and **publishable views**.
 
 ## Requirements
 
-- PHP 8.3+
-- Filament v4
-- `spatie/laravel-health` ^1.30
+| | |
+|---|---|
+| PHP | 8.3+ |
+| Filament | v4 |
+| spatie/laravel-health | ^1.30 |
 
 ## Installation
 
@@ -31,12 +58,12 @@ actions — without coupling the package to your app.
 composer require henryavila/filament-health-dashboard
 ```
 
-Make sure `spatie/laravel-health` is installed and you have registered your
-checks (typically in a service provider via `Health::checks([...])`) and a result
-store (e.g. `EloquentHealthResultStore`). Run `php artisan health:check` on a
-schedule so the store stays fresh.
+You also need `spatie/laravel-health` configured: register your checks (e.g. in a
+service provider via `Health::checks([...])`) and a result store such as
+`EloquentHealthResultStore`. Schedule `php artisan health:check` so the store
+stays fresh.
 
-## Usage
+## Quick start
 
 Register the plugin on a panel:
 
@@ -45,36 +72,36 @@ use HenryAvila\FilamentHealthDashboard\FilamentHealthDashboardPlugin;
 
 public function panel(Panel $panel): Panel
 {
-    return $panel
-        ->plugin(
-            FilamentHealthDashboardPlugin::make()
-                ->navigationGroup('Infrastructure')
-                ->navigationIcon('heroicon-o-heart')
-                ->navigationBadge()        // failing-count badge (default: on)
-                ->pollingInterval('60s')   // optional auto-refresh
-                ->showHistory()            // reserved for the history view
-                ->authorize(fn (): bool => auth()->user()?->can('view-health') ?? false)
-                ->integrations([
-                    \App\Health\Integrations\MyCheckIntegration::class,
-                ]),
-        );
+    return $panel->plugin(
+        FilamentHealthDashboardPlugin::make()
+            ->navigationGroup('Infrastructure')
+            ->navigationIcon('heroicon-o-heart'),
+    );
 }
 ```
 
-### Where the dashboard is shown — three surfaces
+That's it — a "Health" item appears in the panel navigation with the status grid.
 
-The same core (a Livewire widget) can appear anywhere:
+## Where the dashboard appears
 
-**1. Standalone page** (default) — its own navigation item + route. Registered by
-the plugin. Disable it if you only want the widget/component:
+The core is a Livewire widget, so the same dashboard can appear three ways. Pick
+any combination.
+
+### 1. Standalone page (default)
+
+Its own navigation item and route, registered by the plugin. Opt out if you only
+want the widget/component:
 
 ```php
 FilamentHealthDashboardPlugin::make()->registerPage(false);
-// optionally swap the page to customize nav/slug:
+
+// or swap the page to customize navigation/slug:
 FilamentHealthDashboardPlugin::make()->usingPage(\App\Filament\Pages\MyHealth::class);
 ```
 
-**2. Widget** — drop it on any page or dashboard:
+### 2. Widget
+
+Drop it onto any page or dashboard:
 
 ```php
 use HenryAvila\FilamentHealthDashboard\Widgets\HealthDashboardWidget;
@@ -85,14 +112,30 @@ protected function getHeaderWidgets(): array
 }
 ```
 
-**3. Livewire component** — embed it in any Blade (your own page, a modal, a tab):
+### 3. Embeddable Livewire component
+
+Render it inside any Blade — your own page, a modal, a tab:
 
 ```blade
 <livewire:filament-health-dashboard />
 ```
 
-The `CheckIntegration` drill-down/actions work identically across all three,
-because they live in the widget core.
+## Configuration
+
+All methods are chained on `FilamentHealthDashboardPlugin::make()`:
+
+| Method | Description |
+|---|---|
+| `navigationGroup(?string)` | Navigation group for the page. |
+| `navigationIcon(string\|BackedEnum\|null)` | Navigation icon. |
+| `navigationLabel(?string)` | Navigation label (default `Health`). |
+| `navigationSort(?int)` | Navigation order. |
+| `navigationBadge(bool = true)` | Show the failing-count badge (default on). |
+| `pollingInterval(?string)` | Auto-refresh interval, e.g. `'60s'`. |
+| `authorize(Closure)` | Gate access to the dashboard. |
+| `registerPage(bool = true)` | Register the standalone page + nav item. |
+| `usingPage(class-string)` | Use a custom page class. |
+| `integrations(array)` | Register per-check integrations (see below). |
 
 ## Integration layer
 
@@ -115,7 +158,7 @@ final class MyCheckIntegration implements CheckIntegration
 
     public function infolist(StoredCheckResult $result): ?Schema
     {
-        // Return a rich drill-down, or null to fall back to the generic meta table.
+        // Rich drill-down, or null to fall back to the generic meta table.
         return null;
     }
 
@@ -131,6 +174,26 @@ final class MyCheckIntegration implements CheckIntegration
 }
 ```
 
+```php
+FilamentHealthDashboardPlugin::make()->integrations([
+    MyCheckIntegration::class,
+]);
+```
+
+## Customizing the view
+
+Publish the views and edit them in your app:
+
+```bash
+php artisan vendor:publish --tag=filament-health-dashboard-views
+```
+
+## Testing
+
+```bash
+composer test
+```
+
 ## License
 
-MIT. See [LICENSE](LICENSE).
+The MIT License (MIT). See [LICENSE](LICENSE).
