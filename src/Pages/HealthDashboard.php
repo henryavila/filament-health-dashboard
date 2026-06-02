@@ -49,6 +49,15 @@ class HealthDashboard extends Page
         return static::getNavigationLabel();
     }
 
+    /**
+     * The widget renders its own h1 (matching the design), so suppress the
+     * Filament page heading to avoid a duplicate title.
+     */
+    public function getHeading(): string|Htmlable
+    {
+        return '';
+    }
+
     public static function getNavigationBadge(): ?string
     {
         if (! FilamentHealthDashboardPlugin::get()->hasNavigationBadge()) {

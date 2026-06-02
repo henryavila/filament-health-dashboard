@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use Filament\Schemas\Schema;
 use HenryAvila\FilamentHealthDashboard\Contracts\CheckIntegration;
 use HenryAvila\FilamentHealthDashboard\FilamentHealthDashboardPlugin;
+use HenryAvila\FilamentHealthDashboard\Support\HealthDataTable;
 use Spatie\Health\ResultStores\StoredCheckResults\StoredCheckResult;
 
 function fakeIntegration(string $checkName): CheckIntegration
@@ -18,14 +18,14 @@ function fakeIntegration(string $checkName): CheckIntegration
             return $this->checkName;
         }
 
-        public function infolist(StoredCheckResult $result): ?Schema
-        {
-            return null;
-        }
-
         public function actions(StoredCheckResult $result): array
         {
             return [];
+        }
+
+        public function dataTable(StoredCheckResult $result): ?HealthDataTable
+        {
+            return null;
         }
     };
 }
