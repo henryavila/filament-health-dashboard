@@ -1,0 +1,279 @@
+/* =========================================================================
+   ARCH — Design System Foundations
+   Plataforma interna do CRCMG (Conselho Regional de Contabilidade de MG)
+   Tokens de cor + tipografia + espaçamento. Importar PRIMEIRO em qualquer
+   superfície Arch (telas custom fora do Filament e skin do Filament).
+
+   Modelo de cor (3 camadas):
+     1. ARCH        — o ciano→azul do produto (logo + estado de marca)
+     2. POR MÓDULO  — cada módulo tem seu acento (Menu=ciano, LGPD=violeta…)
+     3. CRCMG       — navy + dourado, só em contextos OFICIAIS (selo, footer)
+
+   Dark mode é first-class: tokens de superfície/texto/borda têm override em
+   `.dark`. Acentos de marca e de módulo valem nos dois temas.
+   ========================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  /* =======================================================================
+     1 · ARCH — cor-mãe do produto
+     O mark é um "A" em degradê ciano→azul sobre disco claro. O degradê é
+     assinatura de MARCA (logo, splash, raríssimo destaque). No dia a dia da
+     UI, a cor vem do MÓDULO — o azul Arch é só a base neutra-fria do produto.
+     ----------------------------------------------------------------------- */
+  --arch-cyan:        #2EC7D1;   /* topo do degradê   */
+  --arch-sky:         #18B1E7;   /* meio              */
+  --arch-blue:        #0AA3F5;   /* base — azul vivo  */
+
+  --arch-gradient:        linear-gradient(158deg, #2EC7D1 0%, #18B1E7 46%, #0AA3F5 100%);
+  --arch-gradient-text:   linear-gradient(100deg, #2EC7D1 0%, #0AA3F5 92%);
+
+  /* Escala azul-ciano do produto (oklch, matiz ~225) — base de links e foco */
+  --arch-50:   oklch(0.971 0.014 225);
+  --arch-100:  oklch(0.931 0.034 225);
+  --arch-200:  oklch(0.860 0.066 225);
+  --arch-300:  oklch(0.770 0.106 225);
+  --arch-400:  oklch(0.680 0.150 225);
+  --arch-500:  oklch(0.600 0.165 225);
+  --arch-600:  oklch(0.530 0.150 225);   /* texto de link / fill AA em branco */
+  --arch-700:  oklch(0.460 0.130 225);
+  --arch-800:  oklch(0.380 0.100 225);
+  --arch-900:  oklch(0.300 0.072 225);
+
+  /* =======================================================================
+     2 · POR MÓDULO — a mecânica central do DS
+     Cada módulo (painel) tem um acento próprio, num set harmônico:
+     mesma luminosidade/croma, só a matiz muda (oklch). Use o acento no hero
+     do módulo, no ícone do nav-card e no estado ativo — nunca como decoração
+     genérica. Pares: `-soft` (fundo de chip/tint) e `-ink` (texto sobre soft).
+     ----------------------------------------------------------------------- */
+  --mod-menu:          oklch(0.62 0.115 205);   /* Hub / Menu principal — ciano */
+  --mod-apps:          oklch(0.62 0.090 185);   /* Apps e Integrações  — teal   */
+  --mod-pdti:          oklch(0.58 0.150 250);   /* PDTI                — azul    */
+  --mod-lgpd:          oklch(0.55 0.150 295);   /* LGPD                — violeta */
+  --mod-notificacoes:  oklch(0.60 0.165 330);   /* Notificações        — fúcsia  */
+  --mod-institucional: oklch(0.46 0.110 258);   /* Institucional       — indigo  */
+  --mod-patrimonio:    oklch(0.64 0.110 80);    /* Patrimônio / bens   — âmbar   */
+  --mod-mails:         oklch(0.65 0.150 55);    /* Mails & Ferramentas — laranja */
+  --mod-exports:       oklch(0.60 0.120 158);   /* Exportações         — esmeralda*/
+  --mod-infra:         oklch(0.55 0.045 245);   /* Infraestrutura      — slate   */
+  --mod-seguranca:     oklch(0.55 0.180 28);    /* Segurança           — vermelho*/
+  --mod-logs:          oklch(0.58 0.090 35);    /* Logs                — terracota*/
+
+  /* Tints claros para chips/badges/fundos de hero suave (mix em CSS) */
+  --mod-soft-l: 0.96;   /* helper: tints gerados via color-mix nos componentes */
+
+  /* =======================================================================
+     3 · CRCMG — institucional. Só onde a AUTORIDADE importa.
+     Navy + dourado. Selo, rodapé oficial, documentos, aceite de termo.
+     Dourado é raríssimo — sinaliza "oficial", nunca enfeite.
+     ----------------------------------------------------------------------- */
+  --crc-navy:       #003C78;
+  --crc-navy-deep:  #002A57;
+  --crc-navy-700:   #0A4B8C;
+  --crc-gold:       #B08F43;
+  --crc-gold-soft:  #C9A95E;
+  --crc-gold-50:    #F7F1E2;
+
+  /* =======================================================================
+     NEUTROS — cinza frio, levemente azulado (premium, nunca quente)
+     ----------------------------------------------------------------------- */
+  --gray-0:    #FFFFFF;
+  --gray-25:   #FBFCFD;
+  --gray-50:   #F5F7FA;
+  --gray-100:  #EDF1F6;
+  --gray-200:  #E1E7EF;
+  --gray-300:  #CDD6E2;
+  --gray-400:  #A6B2C2;
+  --gray-500:  #7A8799;
+  --gray-600:  #5A6677;
+  --gray-700:  #3E4856;
+  --gray-800:  #28303B;
+  --gray-900:  #161C24;
+  --ink:       #0F1620;   /* texto principal — quase-preto azulado */
+
+  /* =======================================================================
+     SEMÂNTICO
+     ----------------------------------------------------------------------- */
+  --success:      #15935C;   --success-bg:   #E4F6ED;
+  --warning:      #B5750A;   --warning-bg:   #FBF0DA;
+  --danger:       #D23B41;   --danger-bg:    #FBE7E7;
+  --info:         var(--arch-600);  --info-bg:  var(--arch-50);
+
+  /* =======================================================================
+     SUPERFÍCIE / TEXTO / BORDA — tokens de papel (têm override em .dark)
+     ----------------------------------------------------------------------- */
+  --bg-canvas:    var(--gray-25);   /* fundo do app (recebe o degradê vidro) */
+  --bg-surface:   #FFFFFF;          /* cards e painéis                       */
+  --bg-subtle:    var(--gray-50);   /* zonas internas, table headers         */
+  --bg-inset:     var(--gray-100);
+  --bg-navy:      var(--crc-navy-deep);
+
+  --fg-1:  var(--ink);        /* títulos, copy primária  */
+  --fg-2:  var(--gray-600);   /* copy secundária         */
+  --fg-3:  var(--gray-500);   /* muted, captions          */
+  --fg-on-accent: #FFFFFF;
+  --fg-on-navy:   #DCE6F2;
+
+  --border:        var(--gray-200);
+  --border-strong: var(--gray-300);
+
+  /* =======================================================================
+     CANVAS VIDRO — assinatura do Arch
+     Manchas radiais multicolor suaves sobre canvas claro. É o fundo do hub e
+     das telas custom. Aplicar em <body> ou no container raiz via `.arch-canvas`.
+     ----------------------------------------------------------------------- */
+  --arch-canvas-bg:
+      radial-gradient(ellipse 70% 55% at 8%  18%, oklch(0.85 0.11 195 / 0.22), transparent),
+      radial-gradient(ellipse 55% 65% at 92% 8%,  oklch(0.82 0.10 290 / 0.16), transparent),
+      radial-gradient(ellipse 60% 50% at 50% 92%, oklch(0.84 0.11 230 / 0.18), transparent),
+      radial-gradient(ellipse 45% 55% at 75% 48%, oklch(0.86 0.09 160 / 0.14), transparent),
+      radial-gradient(ellipse 50% 40% at 30% 58%, oklch(0.90 0.06 55  / 0.10), transparent);
+  --arch-canvas-color: oklch(0.985 0.002 247);
+
+  /* =======================================================================
+     RAIOS — alinhados ao Tailwind (o app é Tailwind/Filament)
+     ----------------------------------------------------------------------- */
+  --r-sm:   6px;    /* rounded-md  */
+  --r-md:   8px;    /* rounded-lg  — inputs, botões            */
+  --r-lg:   12px;   /* rounded-xl  — cards, hero               */
+  --r-xl:   16px;   /* rounded-2xl — painéis grandes, modais   */
+  --r-full: 999px;
+
+  /* =======================================================================
+     ELEVAÇÃO — suave, fria, baixa difusão. Premium = sombra contida.
+     A borda hairline faz a maior parte da separação; sombra só pra elevar.
+     ----------------------------------------------------------------------- */
+  --shadow-xs:  0 1px 2px rgba(16,30,54,.06);
+  --shadow-sm:  0 1px 3px rgba(16,30,54,.07), 0 1px 2px rgba(16,30,54,.05);
+  --shadow-md:  0 4px 12px rgba(16,30,54,.08), 0 2px 4px rgba(16,30,54,.04);
+  --shadow-lg:  0 12px 28px rgba(16,30,54,.10), 0 4px 10px rgba(16,30,54,.05);
+  --shadow-xl:  0 24px 56px rgba(16,30,54,.14), 0 8px 18px rgba(16,30,54,.06);
+  --ring-focus: 0 0 0 4px oklch(0.60 0.165 225 / 0.18);
+
+  /* =======================================================================
+     ESPAÇAMENTO (base 4px)
+     ----------------------------------------------------------------------- */
+  --sp-1: 4px;   --sp-2: 8px;   --sp-3: 12px;  --sp-4: 16px;
+  --sp-5: 20px;  --sp-6: 24px;  --sp-8: 32px;  --sp-10: 40px;
+  --sp-12: 48px; --sp-16: 64px; --sp-20: 80px; --sp-24: 96px;
+
+  /* =======================================================================
+     TIPOGRAFIA
+     UI/corpo/títulos: Inter (mesma do Filament — consistência ponta a ponta).
+     Peso faz o trabalho de "display": Black (900) em números e section titles.
+     Código/registro/CRC/CPF/CNPJ: JetBrains Mono.
+     ----------------------------------------------------------------------- */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-feature-sans: 'cv02','cv03','cv04','cv11';
+
+  --text-display: 48px;
+  --text-h1: 34px;
+  --text-h2: 26px;
+  --text-h3: 20px;
+  --text-h4: 17px;
+  --text-lg: 16px;
+  --text-base: 15px;
+  --text-sm: 13.5px;
+  --text-xs: 12px;
+  --text-2xs: 10.5px;
+
+  --lh-tight: 1.1;   --lh-snug: 1.25;   --lh-normal: 1.5;   --lh-relaxed: 1.65;
+  --tracking-tight: -0.02em;  --tracking-snug: -0.01em;
+  --tracking-wide: 0.04em;    --tracking-caps: 0.14em;
+}
+
+/* =========================================================================
+   DARK MODE — override só dos tokens de papel. Use <html class="dark"> ou
+   <body class="dark"> (mesma convenção do app: `.dark` variant).
+   ========================================================================= */
+.dark {
+  --gray-25:  #0E141C;
+  --gray-50:  #131A23;
+  --gray-100: #1A222D;
+  --gray-200: #232D3A;
+  --gray-300: #2E3A49;
+  --ink:      #EAF0F7;
+
+  --bg-canvas:  oklch(0.145 0.014 285);
+  --bg-surface: #131A23;
+  --bg-subtle:  #1A222D;
+  --bg-inset:   #1F2935;
+
+  --fg-1: #EAF0F7;
+  --fg-2: #9FAEC0;
+  --fg-3: #7A8799;
+
+  --border:        #232D3A;
+  --border-strong: #2E3A49;
+
+  --arch-canvas-bg:
+      radial-gradient(ellipse 70% 55% at 8%  18%, oklch(0.30 0.08 195 / 0.25), transparent),
+      radial-gradient(ellipse 55% 65% at 92% 8%,  oklch(0.28 0.07 290 / 0.18), transparent),
+      radial-gradient(ellipse 60% 50% at 50% 92%, oklch(0.30 0.08 230 / 0.22), transparent),
+      radial-gradient(ellipse 45% 55% at 75% 48%, oklch(0.32 0.06 160 / 0.15), transparent),
+      radial-gradient(ellipse 50% 40% at 30% 58%, oklch(0.35 0.05 55  / 0.10), transparent);
+  --arch-canvas-color: oklch(0.145 0.014 285);
+
+  --shadow-sm: 0 1px 3px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+  --shadow-md: 0 4px 12px rgba(0,0,0,.5), 0 2px 4px rgba(0,0,0,.4);
+  --shadow-lg: 0 12px 28px rgba(0,0,0,.55);
+}
+
+/* =========================================================================
+   UTILITÁRIO — canvas vidro
+   ========================================================================= */
+.arch-canvas {
+  background: var(--arch-canvas-bg);
+  background-color: var(--arch-canvas-color);
+  background-attachment: fixed;
+}
+
+/* =========================================================================
+   CLASSES SEMÂNTICAS DE TIPO
+   ========================================================================= */
+.arch-display { font-family: var(--font-sans); font-weight: 800; font-size: var(--text-display); line-height: var(--lh-tight); letter-spacing: var(--tracking-tight); color: var(--fg-1); }
+.arch-h1 { font-family: var(--font-sans); font-weight: 800; font-size: var(--text-h1); line-height: var(--lh-tight); letter-spacing: var(--tracking-tight); color: var(--fg-1); }
+.arch-h2 { font-family: var(--font-sans); font-weight: 700; font-size: var(--text-h2); line-height: var(--lh-snug); letter-spacing: var(--tracking-snug); color: var(--fg-1); }
+.arch-h3 { font-family: var(--font-sans); font-weight: 700; font-size: var(--text-h3); line-height: var(--lh-snug); color: var(--fg-1); }
+.arch-h4 { font-family: var(--font-sans); font-weight: 700; font-size: var(--text-h4); line-height: var(--lh-snug); color: var(--fg-1); }
+.arch-lead { font-family: var(--font-sans); font-weight: 400; font-size: var(--text-lg); line-height: var(--lh-relaxed); color: var(--fg-2); }
+.arch-body { font-family: var(--font-sans); font-weight: 400; font-size: var(--text-base); line-height: var(--lh-normal); color: var(--fg-2); }
+.arch-small { font-family: var(--font-sans); font-weight: 500; font-size: var(--text-sm); line-height: var(--lh-normal); color: var(--fg-2); }
+.arch-caption { font-family: var(--font-sans); font-weight: 500; font-size: var(--text-xs); line-height: var(--lh-normal); color: var(--fg-3); }
+/* Section title — o padrão "font-black uppercase" do app */
+.arch-section-title { font-family: var(--font-sans); font-weight: 900; font-size: var(--text-sm); line-height: 1.2; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--fg-1); }
+.arch-overline { font-family: var(--font-sans); font-weight: 700; font-size: var(--text-2xs); line-height: 1.2; letter-spacing: var(--tracking-caps); text-transform: uppercase; color: var(--fg-3); }
+.arch-value { font-family: var(--font-sans); font-weight: 900; font-size: var(--text-display); line-height: 1; letter-spacing: var(--tracking-tight); color: var(--fg-1); font-variant-numeric: tabular-nums; }
+.arch-mono { font-family: var(--font-mono); font-weight: 500; font-size: var(--text-sm); line-height: var(--lh-normal); }
+
+body { font-feature-settings: var(--font-feature-sans); }
+
+/* =========================================================================
+   ALIASES DE COMPATIBILIDADE
+   Nomes antigos mapeados para os novos tokens, para não quebrar superfícies
+   já escritas. Em código novo, prefira os tokens canônicos acima.
+   ========================================================================= */
+:root {
+  --bg-app:            var(--bg-canvas);
+  --font-display:      var(--font-sans);
+  --arch-blue-600:     var(--arch-600);
+  --arch-blue-700:     var(--arch-700);
+  --arch-blue-800:     var(--arch-800);
+  --ring-brand:        var(--ring-focus);
+  --border-brand:      var(--arch-300);
+  --fg-on-brand:       #FFFFFF;
+  --r-xs:              4px;
+  --r-2xl:             20px;
+  --arch-gradient-soft: linear-gradient(158deg, color-mix(in srgb, var(--arch-cyan) 14%, #fff) 0%, color-mix(in srgb, var(--arch-blue) 14%, #fff) 100%);
+  --shadow-brand:      0 8px 22px rgba(10,163,245,.28);
+}
+
+/* Texto em degradê — assinatura da marca numa palavra de destaque (raro) */
+.arch-gradient-text {
+  background: var(--arch-gradient-text);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}

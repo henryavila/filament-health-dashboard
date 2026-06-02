@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saúde — painel de verificações</title>
+<link rel="stylesheet" href="colors_and_type.css">
+<style>
+  *{box-sizing:border-box}
+  html,body,#root{height:100%}
+  body{margin:0;font-family:var(--font-sans);background:var(--bg-canvas);color:var(--fg-1);
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+
+  /* ---------------------------------------------------------------------
+     Tokens do plugin — neutros e semânticos vêm do DS. Aqui só o que é
+     próprio do plugin: o ACENTO primário (tinta-de-ação, neutra e
+     theme-aware: escuro no claro, claro no escuro) e os status.
+     --------------------------------------------------------------------- */
+  :root{
+    --primary:        var(--fg-1);          /* ink no claro */
+    --primary-fg:     var(--bg-surface);
+    --primary-hover:  var(--gray-800);
+    --card-pad: 20px;
+
+    --st-ok:      var(--success);   --st-ok-bg:   var(--success-bg);
+    --st-warn:    var(--warning);   --st-warn-bg: var(--warning-bg);
+    --st-fail:    var(--danger);    --st-fail-bg: var(--danger-bg);
+    --st-skip:    var(--gray-500);  --st-skip-bg: var(--gray-100);
+  }
+  .dark{ --primary-hover:#F4F8FD; }
+
+  /* tabular numerals em toda métrica */
+  .tnum{font-variant-numeric:tabular-nums}
+
+  /* ---- botões ---- */
+  .h-btn{font-family:var(--font-sans);font-weight:600;border-radius:var(--r-md);cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap;
+    border:1px solid transparent;transition:background .15s,border-color .15s,box-shadow .15s,color .15s,transform .12s cubic-bezier(.22,.61,.36,1)}
+  .h-btn:active{transform:scale(.98)}
+  .h-btn:focus-visible{outline:none;box-shadow:var(--ring-focus)}
+  .h-btn--primary{background:var(--primary);color:var(--primary-fg);box-shadow:var(--shadow-xs)}
+  .h-btn--primary:hover{background:var(--primary-hover)}
+  .h-btn--secondary{background:var(--bg-surface);color:var(--fg-1);border-color:var(--border-strong)}
+  .h-btn--secondary:hover{border-color:var(--gray-400);background:var(--bg-subtle)}
+  .h-btn--ghost{background:transparent;color:var(--fg-2)}
+  .h-btn--ghost:hover{background:var(--bg-subtle);color:var(--fg-1)}
+  .dark .h-btn--ghost:hover{background:var(--bg-inset)}
+
+  /* botão de remediação tingido pelo status do check */
+  .h-btn--fix{background:color-mix(in srgb, var(--accent) 12%, transparent);color:var(--accent);border-color:color-mix(in srgb, var(--accent) 22%, transparent)}
+  .h-btn--fix:hover{background:color-mix(in srgb, var(--accent) 18%, transparent)}
+
+  /* ---- cards ---- */
+  .h-card{background:var(--bg-surface);border:1px solid var(--border);border-radius:var(--r-lg);
+    box-shadow:var(--shadow-sm);transition:border-color .16s,box-shadow .16s,transform .16s cubic-bezier(.22,.61,.36,1)}
+  .h-card--int{cursor:pointer}
+  .h-card--int:hover{border-color:var(--border-strong);box-shadow:var(--shadow-md);transform:translateY(-2px)}
+  .h-card--int:active{transform:translateY(0)}
+  .h-card--int:focus-visible{outline:none;box-shadow:var(--ring-focus);border-color:var(--accent)}
+
+  /* faixa de acento (tratamento A) */
+  .h-accent{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:var(--r-lg) 0 0 var(--r-lg);background:var(--accent)}
+
+  /* ícone de status em chip */
+  .h-chip{display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);flex:none}
+
+  /* nav top */
+  .h-nav{transition:color .14s,background .14s}
+  .h-nav:hover{background:var(--bg-subtle);color:var(--fg-1)}
+  .dark .h-nav:hover{background:var(--bg-inset)}
+  .h-iconbtn{display:flex;align-items:center;justify-content:center;background:transparent;
+    border:1px solid transparent;border-radius:var(--r-md);cursor:pointer;transition:background .14s,border-color .14s}
+  .h-iconbtn:hover{background:var(--bg-subtle)}
+  .dark .h-iconbtn:hover{background:var(--bg-inset)}
+
+  /* seletor de estado (mock) */
+  .h-seg button{transition:color .14s}
+  .h-seg button[data-on="1"]{color:var(--fg-1)}
+
+  /* heatmap */
+  .h-cell{border-radius:2px;transition:transform .1s,outline-color .1s}
+  .h-cell:hover{transform:scale(1.32);outline:2px solid var(--fg-1);outline-offset:1px;position:relative;z-index:2}
+
+  /* modal */
+  .h-scrim{position:fixed;inset:0;z-index:80;background:color-mix(in srgb, var(--crc-navy-deep) 42%, transparent);
+    backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);animation:hFade .2s ease}
+  .h-modal{animation:hRise .26s cubic-bezier(.22,.61,.36,1)}
+  .h-row-hover:hover{background:var(--bg-subtle)}
+
+  @keyframes hFade{from{opacity:0}to{opacity:1}}
+  @keyframes hRise{from{opacity:0;transform:translateY(10px) scale(.99)}to{opacity:1;transform:none}}
+  @keyframes hPop{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:none}}
+  @keyframes hSpin{to{transform:rotate(360deg)}}
+  .h-spin{animation:hSpin .9s linear infinite}
+  .h-pop{animation:hPop .18s cubic-bezier(.22,.61,.36,1)}
+
+  /* scrollbar discreta em áreas roláveis */
+  .h-scroll{scrollbar-width:thin;scrollbar-color:var(--gray-300) transparent}
+  .h-scroll::-webkit-scrollbar{width:10px;height:10px}
+  .h-scroll::-webkit-scrollbar-thumb{background:var(--gray-300);border-radius:6px;border:3px solid transparent;background-clip:content-box}
+</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="components.jsx?v=1"></script>
+  <script type="text/babel" src="data.jsx?v=1"></script>
+  <script type="text/babel" src="cards.jsx?v=2"></script>
+  <script type="text/babel" src="tweaks-panel.jsx?v=1"></script>
+  <script type="text/babel" src="shell.jsx?v=1"></script>
+  <script type="text/babel" src="screen.jsx?v=2"></script>
+  <script type="text/babel" src="app.jsx?v=2"></script>
+</body>
+</html>
