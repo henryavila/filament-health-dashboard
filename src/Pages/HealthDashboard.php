@@ -10,6 +10,7 @@ use HenryAvila\FilamentHealthDashboard\FilamentHealthDashboardPlugin;
 use Illuminate\Contracts\Support\Htmlable;
 use Spatie\Health\ResultStores\ResultStore;
 use Spatie\Health\ResultStores\StoredCheckResults\StoredCheckResult;
+use Throwable;
 use UnitEnum;
 
 /**
@@ -19,29 +20,43 @@ use UnitEnum;
  *
  * Registration is opt-in via `FilamentHealthDashboardPlugin::registerPage()`;
  * hosts that only want the widget/Livewire component can disable it.
+ *
+ * The plugin is resolved defensively: this page's static methods can be
+ * evaluated under a panel where the plugin isn't registered (global
+ * search / spotlight "from all panels"), so {@see plugin()} returns null
+ * there and {@see canAccess()} correctly reports the page as unavailable.
  */
 class HealthDashboard extends Page
 {
     protected string $view = 'filament-health-dashboard::pages.health-dashboard';
 
+    protected static function plugin(): ?FilamentHealthDashboardPlugin
+    {
+        try {
+            return FilamentHealthDashboardPlugin::get();
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
     public static function getNavigationGroup(): string|UnitEnum|null
     {
-        return FilamentHealthDashboardPlugin::get()->getNavigationGroup();
+        return static::plugin()?->getNavigationGroup();
     }
 
     public static function getNavigationIcon(): string|BackedEnum|Htmlable|null
     {
-        return FilamentHealthDashboardPlugin::get()->getNavigationIcon();
+        return static::plugin()?->getNavigationIcon() ?? 'heroicon-o-heart';
     }
 
     public static function getNavigationSort(): ?int
     {
-        return FilamentHealthDashboardPlugin::get()->getNavigationSort();
+        return static::plugin()?->getNavigationSort();
     }
 
     public static function getNavigationLabel(): string
     {
-        return FilamentHealthDashboardPlugin::get()->getNavigationLabel() ?? 'Health';
+        return static::plugin()?->getNavigationLabel() ?? 'Health';
     }
 
     public function getTitle(): string|Htmlable
@@ -60,7 +75,9 @@ class HealthDashboard extends Page
 
     public static function getNavigationBadge(): ?string
     {
-        if (! FilamentHealthDashboardPlugin::get()->hasNavigationBadge()) {
+        $plugin = static::plugin();
+
+        if ($plugin === null || ! $plugin->hasNavigationBadge()) {
             return null;
         }
 
@@ -74,9 +91,13 @@ class HealthDashboard extends Page
         return 'danger';
     }
 
+    /**
+     * Only accessible where the plugin is registered (i.e. its panel). Returns
+     * false elsewhere so cross-panel indexing doesn't surface or crash on it.
+     */
     public static function canAccess(): bool
     {
-        return FilamentHealthDashboardPlugin::get()->isAuthorized();
+        return static::plugin()?->isAuthorized() ?? false;
     }
 
     protected static function failingCount(): int
