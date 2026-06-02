@@ -1,0 +1,52 @@
+{
+    "name": "henryavila/filament-health-dashboard",
+    "description": "Actionable Filament v4 dashboard for spatie/laravel-health: status grid, per-check meta drill-down, remediation actions and a failing-count navigation badge.",
+    "keywords": ["filament", "laravel", "health", "spatie", "dashboard", "monitoring"],
+    "homepage": "https://github.com/henryavila/filament-health-dashboard",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Henry Avila",
+            "email": "personal@henryavila.com"
+        }
+    ],
+    "require": {
+        "php": "^8.3",
+        "filament/filament": "^4.0",
+        "illuminate/contracts": "^11.0 || ^12.0",
+        "illuminate/support": "^11.0 || ^12.0",
+        "spatie/laravel-health": "^1.30",
+        "spatie/laravel-package-tools": "^1.16"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^9.0 || ^10.0",
+        "pestphp/pest": "^3.0 || ^4.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "HenryAvila\\FilamentHealthDashboard\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "HenryAvila\\FilamentHealthDashboard\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "HenryAvila\\FilamentHealthDashboard\\FilamentHealthDashboardServiceProvider"
+            ]
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "php-http/discovery": true
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
