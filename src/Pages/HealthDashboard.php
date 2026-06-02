@@ -5,21 +5,20 @@ declare(strict_types=1);
 namespace HenryAvila\FilamentHealthDashboard\Pages;
 
 use BackedEnum;
-use Filament\Actions\Action;
 use Filament\Pages\Page;
-use HenryAvila\FilamentHealthDashboard\Contracts\CheckIntegration;
 use HenryAvila\FilamentHealthDashboard\FilamentHealthDashboardPlugin;
 use Illuminate\Contracts\Support\Htmlable;
-use Illuminate\Support\Facades\Artisan;
 use Spatie\Health\ResultStores\ResultStore;
 use Spatie\Health\ResultStores\StoredCheckResults\StoredCheckResult;
-use Spatie\Health\ResultStores\StoredCheckResults\StoredCheckResults;
 use UnitEnum;
 
 /**
- * Actionable health dashboard. Renders the latest spatie/laravel-health results
- * (status grid + per-check `meta` drill-down) and, per check, any host-registered
- * {@see CheckIntegration} (rich infolist + remediation actions).
+ * Standalone page surface: a thin shell that renders the
+ * {@see \HenryAvila\FilamentHealthDashboard\Widgets\HealthDashboardWidget} and
+ * owns the navigation item (group/icon/badge from the plugin config).
+ *
+ * Registration is opt-in via `FilamentHealthDashboardPlugin::registerPage()`;
+ * hosts that only want the widget/Livewire component can disable it.
  */
 class HealthDashboard extends Page
 {
@@ -71,50 +70,6 @@ class HealthDashboard extends Page
         return FilamentHealthDashboardPlugin::get()->isAuthorized();
     }
 
-    /**
-     * Re-run all health checks on demand (populates the result store).
-     */
-    public function runChecks(): void
-    {
-        Artisan::call('health:check');
-    }
-
-    protected function getHeaderActions(): array
-    {
-        return [
-            Action::make('refresh')
-                ->label(__('Verificar agora'))
-                ->icon('heroicon-o-arrow-path')
-                ->action(fn () => $this->runChecks()),
-        ];
-    }
-
-    public function getLatestResults(): ?StoredCheckResults
-    {
-        return app(ResultStore::class)->latestResults();
-    }
-
-    public function getPollingInterval(): ?string
-    {
-        return FilamentHealthDashboardPlugin::get()->getPollingInterval();
-    }
-
-    /**
-     * Host integration for a given check, if registered.
-     */
-    public function integrationFor(string $checkName): ?CheckIntegration
-    {
-        return FilamentHealthDashboardPlugin::get()->resolveIntegration($checkName);
-    }
-
-    /**
-     * @return array<int, Action>
-     */
-    public function integrationActionsFor(StoredCheckResult $result): array
-    {
-        return $this->integrationFor($result->name)?->actions($result) ?? [];
-    }
-
     protected static function failingCount(): int
     {
         $results = app(ResultStore::class)->latestResults();
@@ -130,16 +85,5 @@ class HealthDashboard extends Page
                 true,
             ))
             ->count();
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    protected function getViewData(): array
-    {
-        return [
-            'results' => $this->getLatestResults(),
-            'pollingInterval' => $this->getPollingInterval(),
-        ];
     }
 }

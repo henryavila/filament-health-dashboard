@@ -67,3 +67,15 @@ test('authorize defaults to true and honours the callback', function (): void {
     expect((new FilamentHealthDashboardPlugin)->isAuthorized())->toBeTrue()
         ->and((new FilamentHealthDashboardPlugin)->authorize(fn (): bool => false)->isAuthorized())->toBeFalse();
 });
+
+test('the standalone page is registered by default and can be opted out', function (): void {
+    expect((new FilamentHealthDashboardPlugin)->shouldRegisterPage())->toBeTrue()
+        ->and((new FilamentHealthDashboardPlugin)->registerPage(false)->shouldRegisterPage())->toBeFalse();
+});
+
+test('the page class is swappable', function (): void {
+    $custom = HenryAvila\FilamentHealthDashboard\Pages\HealthDashboard::class;
+
+    expect((new FilamentHealthDashboardPlugin)->getPageClass())->toBe($custom)
+        ->and((new FilamentHealthDashboardPlugin)->usingPage($custom)->getPageClass())->toBe($custom);
+});

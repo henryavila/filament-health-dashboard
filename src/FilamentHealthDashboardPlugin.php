@@ -24,6 +24,13 @@ class FilamentHealthDashboardPlugin implements Plugin
      */
     protected ?array $resolvedIntegrations = null;
 
+    protected bool $registerPage = true;
+
+    /**
+     * @var class-string<HealthDashboard>
+     */
+    protected string $pageClass = HealthDashboard::class;
+
     protected ?string $navigationGroup = null;
 
     protected string|\BackedEnum|null $navigationIcon = 'heroicon-o-heart';
@@ -60,12 +67,50 @@ class FilamentHealthDashboardPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        $panel->pages([
-            HealthDashboard::class,
-        ]);
+        if ($this->registerPage) {
+            $panel->pages([
+                $this->pageClass,
+            ]);
+        }
     }
 
     public function boot(Panel $panel): void {}
+
+    /**
+     * Whether to register the standalone page (and its nav item). Disable when
+     * you only want the widget / Livewire component.
+     */
+    public function registerPage(bool $condition = true): static
+    {
+        $this->registerPage = $condition;
+
+        return $this;
+    }
+
+    public function shouldRegisterPage(): bool
+    {
+        return $this->registerPage;
+    }
+
+    /**
+     * Swap the page class (e.g. to extend HealthDashboard with custom nav/slug).
+     *
+     * @param  class-string<HealthDashboard>  $pageClass
+     */
+    public function usingPage(string $pageClass): static
+    {
+        $this->pageClass = $pageClass;
+
+        return $this;
+    }
+
+    /**
+     * @return class-string<HealthDashboard>
+     */
+    public function getPageClass(): string
+    {
+        return $this->pageClass;
+    }
 
     /**
      * @param  array<int, class-string<CheckIntegration>|CheckIntegration>  $integrations

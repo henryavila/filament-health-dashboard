@@ -61,6 +61,39 @@ public function panel(Panel $panel): Panel
 }
 ```
 
+### Where the dashboard is shown — three surfaces
+
+The same core (a Livewire widget) can appear anywhere:
+
+**1. Standalone page** (default) — its own navigation item + route. Registered by
+the plugin. Disable it if you only want the widget/component:
+
+```php
+FilamentHealthDashboardPlugin::make()->registerPage(false);
+// optionally swap the page to customize nav/slug:
+FilamentHealthDashboardPlugin::make()->usingPage(\App\Filament\Pages\MyHealth::class);
+```
+
+**2. Widget** — drop it on any page or dashboard:
+
+```php
+use HenryAvila\FilamentHealthDashboard\Widgets\HealthDashboardWidget;
+
+protected function getHeaderWidgets(): array
+{
+    return [HealthDashboardWidget::class];
+}
+```
+
+**3. Livewire component** — embed it in any Blade (your own page, a modal, a tab):
+
+```blade
+<livewire:filament-health-dashboard />
+```
+
+The `CheckIntegration` drill-down/actions work identically across all three,
+because they live in the widget core.
+
 ## Integration layer
 
 The dashboard renders every check generically. To add domain value to a specific
